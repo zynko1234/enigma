@@ -19,20 +19,30 @@ public class RotorArray
    
    public int ConvertValue( final int inVal )
    {
-      final int MAPPED_VALUE = 2;
+      final int MAPPED_VALUE = 1;
       
       // Step the rotors forward by one.
       Rotate();
       
       int output = inVal;
+      int modCarryOver = theAlphabetSize - 1;      
+      int turn;
       
       output = theStatRotor   [output][MAPPED_VALUE];
       
-      output = theFirstRotor  [output][MAPPED_VALUE];
-      output = theSecondRotor [output][MAPPED_VALUE];
-      output = theThirdRotor  [output][MAPPED_VALUE];
+      turn = ( output + theFirstRotPos ) % modCarryOver;
+      output = theFirstRotor  [turn][MAPPED_VALUE];
+      
+      output = theSecondRotor [(output + theSecondRotPos) % 26][MAPPED_VALUE];
+      output = theThirdRotor  [(output + theThirdRotPos) % 26][MAPPED_VALUE];
       
       output = theReflectRotor [output][MAPPED_VALUE];
+      
+      output = theThirdRotor  [(output + theThirdRotPos) % 26][MAPPED_VALUE];
+      output = theSecondRotor [(output + theSecondRotPos) % 26][MAPPED_VALUE];
+      output = theFirstRotor  [(output + theFirstRotPos) % 26][MAPPED_VALUE];
+      
+      output = theStatRotor [output][MAPPED_VALUE];
       
       return output;
    }
@@ -40,28 +50,28 @@ public class RotorArray
    private void Rotate()
    {
       // Rotate the first wheel.
-      theFirstRotorPosition++;
+      theFirstRotPos++;
       
       // IF: The first wheel rotates past the size of elements it has,
       // set back to zero and turn the next rotor.
-      if ( theSecondRotorPosition == theAlphabetSize )
+      if ( theSecondRotPos == theAlphabetSize )
       {
-         theFirstRotorPosition = 0;
-         theSecondRotorPosition++;
+         theFirstRotPos = 0;
+         theSecondRotPos++;
 
          // IF: The second wheel rotates past the size of elements it has,
          // set back to zero and turn the next rotor.
-         if ( theSecondRotorPosition == theAlphabetSize )
+         if ( theSecondRotPos == theAlphabetSize )
          {
-            theSecondRotorPosition = 0;
-            theThirdRotorPosition++;
+            theSecondRotPos = 0;
+            theThirdRotPos++;
 
             // IF: The second wheel rotates past the size of elements it has,
             // set back to zero. All three rotors should be back at position
             // zero if this evaluates to true.
-            if ( theThirdRotorPosition == theAlphabetSize )
+            if ( theThirdRotPos == theAlphabetSize )
             {
-               theThirdRotorPosition = 0;
+               theThirdRotPos = 0;
             }
          }
       }
@@ -180,15 +190,15 @@ public class RotorArray
    /**
     * 
     */
-   private int theFirstRotorPosition;
+   private int theFirstRotPos;
    
    /**
     * 
     */
-   private int theSecondRotorPosition;
+   private int theSecondRotPos;
    
    /**
     * 
     */
-   private int theThirdRotorPosition;
+   private int theThirdRotPos;
 }
