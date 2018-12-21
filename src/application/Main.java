@@ -1,5 +1,6 @@
 package application;
 
+import enigma.components.Rotor;
 import enigma.components.PlugBoard;
 
 public class Main
@@ -61,8 +62,23 @@ public class Main
    public static void TestRotors()
    {
       System.out.println( "---RUN ROTOR TEST---" );
+      Rotor testRotor = new Rotor( rotorMap, false, 0 );
+      
+      // 0 representing A will be pushed through the rotor over and over again.
+      int repeatValue = 0;
+      
+      for(int i = 0; i < testRotor.GetRotorSize() + 50; i++ )
+      {
+         System.out.println( "Value converted: " + 0 + " --> " + testRotor.PassValue( repeatValue, false ));
+
+         testRotor.TurnRotor();
+      }
       
       System.out.println( "---END ROTOR TEST---" );
       return;
    }
+   
+   private static int[] rotorMap = { 15, 4,  25, 20, 14, 7,  23, 18, 2,  21,
+                                     5,  12, 19, 1,  6,  11, 17, 8,  13, 16, 
+                                     9,  22, 0,  24, 3,  10 };
 }
