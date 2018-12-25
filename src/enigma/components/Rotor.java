@@ -9,7 +9,7 @@ public class Rotor
     * @param isStationary
     * @param inStartPos
     */
-   public Rotor( final int[] rotorMap, final boolean isStationary, final int inStartPos )
+   public Rotor( final int[] rotorMap, final boolean isStationary )
    {
       
       if ( IsValidRotor( rotorMap ) == false )
@@ -18,7 +18,8 @@ public class Rotor
       }
       
       theRotor = rotorMap;
-
+      theMirrorRotor = new int[rotorMap.length];
+      
       // Generate the mirror rotor. The value of the rotor acts as the offset of
       // the mirror, and the offset it was stored at in rotor acts as the value.
       for( int i = 0; i < theRotor.length; i++ )
@@ -27,7 +28,7 @@ public class Rotor
       }
       
       theStationaryFlag = isStationary;
-      theRotorPos = inStartPos;
+      theRotorPos = DEF_INIT_START_POS;
 
       return;
    }
@@ -45,7 +46,7 @@ public class Rotor
       // IF: The given value is within the bounds of zero and the size of the
       // rotor then get the value.
       // ELSE: Thow an exception.
-      if( ( inValue < theRotor.length ) && ( inValue >= 0 ) )
+      if( IsValidValue( inValue ) )
       {
          int turnOffset;
          
@@ -109,6 +110,28 @@ public class Rotor
       return theRotor.length;
    }
    
+   ////////////////////////////////////////////////////////////////////////////
+   // Public Member Methods
+   ////////////////////////////////////////////////////////////////////////////
+   
+   /**
+    * Sets a new position value.
+    * @param inPosition The new position value to set.
+    */
+   public void SetPosition( int inPosition )
+   {
+	   theRotorPos = inPosition;
+	   return;
+   }
+   
+   /**
+    * 
+    */
+   public int GetPosition()
+   {
+	   return theRotorPos;
+   }
+   
    /**
     * 
     */
@@ -138,7 +161,7 @@ public class Rotor
    }
    
    ////////////////////////////////////////////////////////////////////////////
-   // Private Static Methods
+   // Public Static Methods
    ////////////////////////////////////////////////////////////////////////////
    
    /**
@@ -177,6 +200,15 @@ public class Rotor
       
       return validity;
    }
+   
+   ////////////////////////////////////////////////////////////////////////////
+   // Private Static Data
+   ////////////////////////////////////////////////////////////////////////////
+
+   /**
+    * 
+    */
+   private static int DEF_INIT_START_POS = 0;
    
    ////////////////////////////////////////////////////////////////////////////
    // Private Member Data
