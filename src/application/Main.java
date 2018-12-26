@@ -9,41 +9,7 @@ public class Main
 
    public static void main ( String[] args )
    {
-     Rotor[] rotors = SetupRotors();
-     PlugBoard plugBoard = SetupPlugboard();
-     
-      EnigmaMachine theEnigmaMachine = new EnigmaMachine( rotors[0], 
-                                               			  rotors[1], 
-                                               			  rotors[2], 
-                                               			  rotors[3], 
-                                               			  rotors[4], 
-                                               			  plugBoard );
-      
-      String testInput = "AAA";
-      String testOutput = "";
-      
-      System.out.println( "Test Input: " + testInput );
-      int[] testInputValues = ConvertAlphabetString( testInput );
-      int[] outValues = theEnigmaMachine.CipherValues( testInputValues );
-      
-      System.out.println( "Test Output: " + ConvertValueString( outValues ) );
-      
-      rotors = SetupRotors();
-      plugBoard = SetupPlugboard();
-      
-      //Reset the enigma machine.
-      theEnigmaMachine = new EnigmaMachine( rotors[0], 
-                            				rotors[1], 
-                            				rotors[2], 
-                            				rotors[3], 
-                            				rotors[4],
-                            				plugBoard );
-      
-      outValues = theEnigmaMachine.CipherValues( outValues );
-      testOutput = ConvertValueString( outValues );
-      
-      System.out.println( "Test Output Re-Entered: " + testOutput );
-      
+      TestMachine();
       return;
    }
    
@@ -147,6 +113,7 @@ public class Main
    {
       TestPlugBoard();
       TestRotors();
+      TestMachine();
       return;
    }
    
@@ -213,6 +180,34 @@ public class Main
       return;
    }
    
+   public static void TestMachine()
+   {
+      Rotor[] rotors = SetupRotors();
+      PlugBoard plugBoard = SetupPlugboard();
+
+      EnigmaMachine theEnigmaMachine = new EnigmaMachine( rotors[ 0 ], rotors[ 1 ], rotors[ 2 ], rotors[ 3 ], rotors[ 4 ], plugBoard );
+
+      String testInput = "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAA";
+      String testOutput = "";
+
+      System.out.println( "Test Input: " + testInput );
+      int[] testInputValues = ConvertAlphabetString( testInput );
+      int[] outValues = theEnigmaMachine.CipherValues( testInputValues );
+
+      System.out.println( "Test Output: " + ConvertValueString( outValues ) );
+
+      rotors = SetupRotors();
+      plugBoard = SetupPlugboard();
+
+      // Reset the enigma machine.
+      theEnigmaMachine = new EnigmaMachine( rotors[ 0 ], rotors[ 1 ], rotors[ 2 ], rotors[ 3 ], rotors[ 4 ], plugBoard );
+
+      outValues = theEnigmaMachine.CipherValues( outValues );
+      testOutput = ConvertValueString( outValues );
+
+      System.out.println( "Test Output Re-Entered: " + testOutput );
+   }
+   
    public static void TestRotors()
    {
       System.out.println( "---RUN ROTOR TEST---" );
@@ -221,12 +216,42 @@ public class Main
       // 0 representing A will be pushed through the rotor over and over again.
       int repeatValue = 0;
       
-      for(int i = 0; i < testRotor.GetRotorSize() + 50; i++ )
+      for(int i = 0; i < testRotor.GetRotorSize(); i++ )
       {
          System.out.println( "Value converted: " + 0 + " --> " + testRotor.PassValue( repeatValue, false ));
 
          testRotor.TurnRotor();
       }
+      System.out.println( "Mirroring Rotor With Repeating Input" );
+      for(int i = 0; i < testRotor.GetRotorSize(); i++ )
+      {
+         System.out.println( "Value converted: " + 0 + " --> " + testRotor.PassValue( repeatValue, true ));
+
+         testRotor.TurnRotor();
+      }
+      
+      System.out.println( "Resetting Position" );
+      testRotor.SetRotorPos( 0 );
+      int[] testRotorOutput = new int[testRotor.GetRotorSize()];
+      
+      for(int i = 0; i < testRotor.GetRotorSize(); i++ )
+      {
+         testRotorOutput[i] = testRotor.PassValue( repeatValue, false );
+         System.out.println( "Value converted: " + 0 + " --> " + testRotorOutput[i]);
+
+         testRotor.TurnRotor();
+      }
+      
+      System.out.println( "Mirroring Rotor With First Output" );
+      testRotor.SetRotorPos( 0 );
+      
+      for(int i = 0; i < testRotor.GetRotorSize(); i++ )
+      {
+         System.out.println( "Value converted: " + testRotorOutput[i] + " --> " + testRotor.PassValue( testRotorOutput[i], true ));
+
+         testRotor.TurnRotor();
+      }
+      
       
       System.out.println( "---END ROTOR TEST---" );
       return;
@@ -235,4 +260,6 @@ public class Main
    private static int[] rotorMap = { 15, 4,  25, 20, 14, 7,  23, 18, 2,  21,
                                      5,  12, 19, 1,  6,  11, 17, 8,  13, 16, 
                                      9,  22, 0,  24, 3,  10 };
+   
+   // 
 }

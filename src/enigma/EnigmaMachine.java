@@ -43,27 +43,26 @@ public class EnigmaMachine
       
       boolean isReflected = false;
       
-      thePlugBoard.GetMap( output );
+      output = thePlugBoard.GetMap( output );
       
       // Pass the value through the simulated circut.
-      //output = theStationaryRotor.PassValue( output,isReflected );
-      output = theFirstRotSlot.PassValue( output,isReflected );
-      //output = theSecondRotSlot.PassValue( output,isReflected );
-      //output = theThirdRotSlot.PassValue( output,isReflected );
-      
+      output = theStationaryRotor.PassValue( output, isReflected );
+      output = theFirstRotSlot.PassValue( output, isReflected );
+      output = theSecondRotSlot.PassValue( output, isReflected );
+      output = theThirdRotSlot.PassValue( output, isReflected );
 
-      output = theReflectingRotor.PassValue( output,isReflected );
-      isReflected = true;      
-      
+      output = theReflectingRotor.PassValue( output, isReflected );
+      isReflected = true;
+
       // From the reflector rotor,send the value back through the output side
       // of the rotors back into the plug board.
-      //output = theThirdRotSlot.PassValue( output,isReflected );
-      //output = theSecondRotSlot.PassValue( output,isReflected );
-      output = theFirstRotSlot.PassValue( output,isReflected );
-      //output = theStationaryRotor.PassValue( output,isReflected );
-      
-      thePlugBoard.GetMap( output );
-      
+      output = theThirdRotSlot.PassValue( output, isReflected );
+      output = theSecondRotSlot.PassValue( output, isReflected );
+      output = theFirstRotSlot.PassValue( output, isReflected );
+      output = theStationaryRotor.PassValue( output, isReflected );
+
+      output = thePlugBoard.GetMap( output );
+
       return output;
    }
    
@@ -95,12 +94,12 @@ public class EnigmaMachine
       theFirstRotSlot.TurnRotor();
       
       // IF: The first rotor returns to the 0th position,turn the next rotor.
-      if ( theFirstRotSlot.GetRotorPosition() == 0 )
+      if ( theFirstRotSlot.GetRotorPos() == 0 )
       {
          theSecondRotSlot.TurnRotor();
 
          // IF: The first rotor returns to the 0th position,turn the next rotor.
-         if ( theSecondRotSlot.GetRotorPosition() == 0 )
+         if ( theSecondRotSlot.GetRotorPos() == 0 )
          {
             theThirdRotSlot.TurnRotor();
          }
