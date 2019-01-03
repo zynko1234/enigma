@@ -54,34 +54,27 @@ public class Rotor
       {
          int turnOffset;
 
-         // IF: This is a stationary rotor then the turn offset is just the
-         // initial value.
-         // ELSE: Set the turn offset to the value added to the rotations moded
-         // against the rotor size for overflow. (e.g. If the value is 20 of 25
-         // and the rotation position is 9 then the offset
-         // is (20 + 9) mod 26 = 3 )
+         if ( isMirrored == false )
+         {
+            turnOffset = ( ( inValue + theRotorPos ) % theRotor.length );
+            output = theRotor[ turnOffset ];
+         }
+         else
+         {
+            output = theMirrorRotor[ inValue ];
 
-            if( isMirrored == false )
-            {
-               turnOffset = ( ( inValue + theRotorPos ) % theRotor.length );
-               output =  theRotor[ turnOffset ];
-            }
-            else
-            {
-               output = theMirrorRotor[inValue];
-               
-               // Reverse modulus in case the rotor position evaluates negative 
-               // values. (e.g. mirrored offset value of 2 minus a position of 
-               // 5 will give the length of the alphabet - 3)
-               output = ( theRotor.length + output - theRotorPos ) % theRotor.length;
-               
-            }
-         
+            // Reverse modulus in case the rotor position evaluates negative
+            // values. (e.g. mirrored offset value of 2 minus a position of
+            // 5 will give the length of the alphabet - 3)
+            output = ( theRotor.length + output - theRotorPos ) % theRotor.length;
+
+         }
 
          // If this is coming from the simulated output side of the rotor, use
          // mirror of the rotor. Otherwise use the rotor as normal.
-         
-      } else
+
+      }
+      else
       {
          throw new IllegalArgumentException( "Value is outside the range of the rotor alphabet." );
       }
@@ -107,7 +100,8 @@ public class Rotor
       if ( IsValidValue( inPosition ) )
       {
          theRotorPos = inPosition;
-      } else
+      } 
+      else
       {
          throw new IllegalArgumentException( "Value is outside the range of the rotor alphabet." );
       }
@@ -217,6 +211,11 @@ public class Rotor
     */
    private int[] theRotor;
 
+   /**
+    * 
+    */
+   private int tickRate;
+   
    /**
     * A mirror of the rotor map. Simulates sending a value into the output side of
     * the rotor. Maps the value of the rotors as offsets, and the offsets as

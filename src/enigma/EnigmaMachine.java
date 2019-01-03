@@ -26,6 +26,11 @@ public class EnigmaMachine
       return;
    }
    
+   public EnigmaMachine( int alphabetSize )
+   {
+      
+   }
+   
    ////////////////////////////////////////////////////////////////////////////
    // Public Member Methods
    ////////////////////////////////////////////////////////////////////////////
@@ -63,6 +68,24 @@ public class EnigmaMachine
 
       output = thePlugBoard.GetMap( output );
 
+      
+      // Go through the rotor list.
+      for( int i = 0; i < theTurningRotors.length; i++ )
+      {
+         output = theTurningRotors[i].PassValue( output, isReflected );
+      }
+      
+      // Go through the reflecting rotor, and set the mirrored flag to represent
+      // the signal going back through the turning rotors in reverse.
+      output = theReflectingRotor.PassValue( output, isReflected );
+      isReflected = true;
+      
+      // Go back through the rotor list in reverse.
+      for( int i = theTurningRotors.length - 1; i >= 0; i++ )
+      {
+         output = theTurningRotors[i].PassValue( output, isReflected );
+      }
+      
       return output;
    }
    
@@ -137,6 +160,11 @@ public class EnigmaMachine
    Rotor theReflectingRotor;
    
    /**
+    * 
+    */
+   Rotor[] theTurningRotors;
+   
+   /**
     * The stationary input rotor. It's the first rotor to take input after the
     * plugboard.
     */
@@ -172,5 +200,6 @@ public class EnigmaMachine
 	*/
    public static final int[] SWISS_K_STAT = { 16, 22, 4, 17, 19, 25, 20, 8, 14, 0, 18, 3, 5, 6, 7, 9, 10, 15, 24, 23, 2, 21, 1, 13, 12, 11 };
                                          // { 16, 22, 4, 17, 19, 25, 20, 8, 14, 0, 18, 3, 5, 6, 7, 9, 10, 15, 24, 23, 2, 21, 1, 13, 12, 11 }  
+   
    
 }
