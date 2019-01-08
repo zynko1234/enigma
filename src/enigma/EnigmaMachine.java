@@ -117,12 +117,12 @@ public class EnigmaMachine
       theFirstRotSlot.TurnRotor();
       
       // IF: The first rotor returns to the 0th position,turn the next rotor.
-      if ( theFirstRotSlot.GetRotorPos() == 0 )
+      if ( theFirstRotSlot.GetPosition() == 0 )
       {
          theSecondRotSlot.TurnRotor();
 
          // IF: The first rotor returns to the 0th position,turn the next rotor.
-         if ( theSecondRotSlot.GetRotorPos() == 0 )
+         if ( theSecondRotSlot.GetPosition() == 0 )
          {
             theThirdRotSlot.TurnRotor();
          }
