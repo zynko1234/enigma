@@ -1,62 +1,101 @@
 package application;
 
 import enigma.components.Rotor;
+import tools.RotorGenerator;
 
+import java.io.IOException;
+import java.io.UTFDataFormatException;
+import java.nio.charset.Charset;
+import java.nio.charset.StandardCharsets;
+import java.nio.file.Files;
+import java.nio.file.Paths;
 import java.util.ArrayList;
+import java.util.Arrays;
 
 import application.test.EnigmaTester;
-import enigma.EnigmaMachine;
-import enigma.components.PlugBoard;
+import enigma.components.ClockRotor;
+import enigma.components.ReflectingRotor;
 
 public class Main
 {
 
    public static void main ( String[] args )
    {
-      ArrayList<int[]> testRotors = new ArrayList<>();
-
-      for ( int i = 0; i < 1000; i++ )
+      char[] x = RotorGenerator.generateUnicodeAlphabet( 1112064 );
+      String y = String.valueOf( x );
+      StringBuilder z = new StringBuilder();
+      
+      for( int i = 0; i < y.length(); i++ )
       {
-         testRotors.add( Rotor.GenerateRotorMap( 26 ) );
-         System.out.println( "MAP: " + ( i + 1 ) );
-
-         for ( int j = 0; j < testRotors.get( i ).length; j++ )
-         {
-            System.out.println( "Value at " + j + ": " + testRotors.get( i )[j] );
-         }
-         System.out.println( "" );
+         z.append( i + ": " + y.charAt( i ) + "\n" ) ;
+         System.out.print( "\rPercent Complete: " + ( ( 100* ( i + 1 ) ) / y.length() )  + "%  ");
       }
-
-      Rotor testRotor = new Rotor( testRotors.get( 0 ), false, 3, 4 );
-      String testToString = testRotor.toString();
-      System.out.println( testToString );
-
+      
+      byte[] theBytes = z.toString().getBytes(StandardCharsets.UTF_8);
+      
+      try 
+      {
+         Files.write(Paths.get("./codepoints.txt"), theBytes);
+      }
+      catch (IOException e)
+      {
+         e.printStackTrace();
+      }
+      
+//      int[] x = {1, 3, 0, 2};
+//      ClockRotor testRotor = new ClockRotor( x, 2, 0 ); 
+//      
+//      ClockRotor cloneRotor = testRotor.clone();
+//      
+//      System.out.println( "Original" );
+//      System.out.println( testRotor.toString() );
+//      System.out.println( "CLONE" );
+//      System.out.println( cloneRotor.toString() );
+//      
+//      int[] testInput = {0, 1, 2, 3};
+//      int[] testOutput = new int[testInput.length];
+//      
+//      for( int i = 0; i < testInput.length; i++ )
+//      {  
+//         testOutput[i] = testRotor.cipher( testInput[i]);
+//         System.out.print( testOutput[i] );
+//      }
+//      
+//      System.out.println( "" );
+//      
+//      testRotor.reset();
+//      
+//      for( int i = 0; i < testOutput.length; i++ )
+//      {
+//         System.out.print( testRotor.cipher( testOutput[i] ) );
+//      }      
+      
       return;
    }
 
-   public static int[] ConvertAlphabetString ( String inVals )
+   public static int[] convertAlphabetString ( String inVals )
    {
       int[] output = new int[ inVals.length() ];
 
       for ( int i = 0; i < inVals.length(); i++ )
       {
-         output[ i ] = ConvertAlphabetToValue( inVals.charAt( i ) );
+         output[ i ] = convertAlphabetToValue( inVals.charAt( i ) );
       }
       return output;
    }
 
-   public static String ConvertValueString ( int[] inVals )
+   public static String convertValueString ( int[] inVals )
    {
       String output = "";
 
       for ( int i = 0; i < inVals.length; i++ )
       {
-         output = output + ConvertValueToAlphabet( inVals[ i ] );
+         output = output + convertValueToAlphabet( inVals[ i ] );
       }
       return output;
    }
 
-   public static int ConvertAlphabetToValue ( char inValue )
+   public static int convertAlphabetToValue ( char inValue )
    {
       int outValue = -1;
 
@@ -146,7 +185,7 @@ public class Main
       return outValue;
    }
 
-   public static char ConvertValueToAlphabet ( int inValue )
+   public static char convertValueToAlphabet ( int inValue )
    {
       char outValue = ' ';
 
@@ -236,7 +275,7 @@ public class Main
       return outValue;
    }
 
-   public static void RunTests ()
+   public static void runTests ()
    {
       EnigmaTester.TestPlugBoard();
       EnigmaTester.TestRotors();

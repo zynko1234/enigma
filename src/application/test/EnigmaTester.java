@@ -1,8 +1,12 @@
 package application.test;
 
+import java.util.ArrayList;
+
 import enigma.EnigmaMachine;
+import enigma.components.ClockRotor;
 import enigma.components.PlugBoard;
 import enigma.components.Rotor;
+import tools.RotorGenerator;
 
 public class EnigmaTester
 {
@@ -12,6 +16,29 @@ public class EnigmaTester
       return outBoard;
    }
 
+   
+   public static void GenerateAndCheckRotors()
+   {
+      ArrayList<int[]> testRotors = new ArrayList<>();
+
+      for ( int i = 0; i < 1000; i++ )
+      {
+         //testRotors.add( RotorGenerator.generateRotorMap( 26 ) );
+         System.out.println( "MAP: " + ( i + 1 ) );
+
+         for ( int j = 0; j < testRotors.get( i ).length; j++ )
+         {
+            System.out.println( "Value at " + j + ": " + testRotors.get( i )[j] );
+         }
+         System.out.println( "" );
+      }
+
+//      ClockRotor testRotor = new ClockRotor( testRotors.get( 0 ), false, 3, 4 );
+//      String testToString = testRotor.toString();
+//      System.out.println( testToString );
+      return;
+   }
+   
 //   public static Rotor[] SetupRotors()
 //   {
 //      Rotor[] outputRotors = new Rotor[5];

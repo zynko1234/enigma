@@ -1,6 +1,8 @@
 package enigma;
 
+import enigma.components.ClockRotor;
 import enigma.components.PlugBoard;
+import enigma.components.ReflectingRotor;
 import enigma.components.Rotor;
 
 public class EnigmaMachine
@@ -11,16 +13,9 @@ public class EnigmaMachine
    ////////////////////////////////////////////////////////////////////////////
    
    public EnigmaMachine( Rotor inRotOne,
-                         Rotor inRotTwo, 
-                         Rotor inRotThree,
-                         Rotor inRotStat,
-                         Rotor inRotRefl, 
+                         ReflectingRotor inRotRefl, 
                          PlugBoard inBoard)
    {
-      theFirstRotSlot = inRotOne;
-      theSecondRotSlot = inRotTwo;
-      theThirdRotSlot = inRotThree;
-      theStationaryRotor = inRotStat;
       theReflectingRotor = inRotRefl;
       thePlugBoard = inBoard;
       return;
@@ -40,10 +35,11 @@ public class EnigmaMachine
     * @param inVal
     * @return
     */
-   public int CipherValue( final int inVal )
+   public int cipherValue( final int inVal )
    {
       int output = inVal;
       
+      // Activate the clock rotation of the rotors before ciphering a value.
       Rotate();
       
       boolean isReflected = false;
@@ -51,40 +47,26 @@ public class EnigmaMachine
       output = thePlugBoard.GetMap( output );
       
       // Pass the value through the simulated circut.
-      output = theStationaryRotor.PassValue( output, isReflected );
-      output = theFirstRotSlot.PassValue( output, isReflected );
-      output = theSecondRotSlot.PassValue( output, isReflected );
-      output = theThirdRotSlot.PassValue( output, isReflected );
+      output = theStationaryRotor.cipher( output );
 
-      output = theReflectingRotor.PassValue( output, isReflected );
+      for( int i = 0; i < theTurningRotors.length; i++ )
+      {
+         output = theTurningRotors[i].cipher( output );
+      }
+      
+      output = theReflectingRotor.cipher( output );
       isReflected = true;
 
       // From the reflector rotor,send the value back through the output side
       // of the rotors back into the plug board.
-      output = theThirdRotSlot.PassValue( output, isReflected );
-      output = theSecondRotSlot.PassValue( output, isReflected );
-      output = theFirstRotSlot.PassValue( output, isReflected );
-      output = theStationaryRotor.PassValue( output, isReflected );
-
+      for( int i = ( theTurningRotors.length -1 ); i >= 0; i++ )
+      {
+         output = theTurningRotors[i].cipher( output);
+      }
+      
+      output = theStationaryRotor.cipher( output );
+      
       output = thePlugBoard.GetMap( output );
-
-      
-      // Go through the rotor list.
-      for( int i = 0; i < theTurningRotors.length; i++ )
-      {
-         output = theTurningRotors[i].PassValue( output, isReflected );
-      }
-      
-      // Go through the reflecting rotor, and set the mirrored flag to represent
-      // the signal going back through the turning rotors in reverse.
-      output = theReflectingRotor.PassValue( output, isReflected );
-      isReflected = true;
-      
-      // Go back through the rotor list in reverse.
-      for( int i = theTurningRotors.length - 1; i >= 0; i++ )
-      {
-         output = theTurningRotors[i].PassValue( output, isReflected );
-      }
       
       return output;
    }
@@ -101,7 +83,7 @@ public class EnigmaMachine
 	   // Cipher each individual value.
 	   for(int i = 0; i < inVals.length; i++)
 	   {
-		   output[i] = CipherValue( inVals[i] );
+		   output[i] = cipherValue( inVals[i] );
 	   }
 	   
 	   return output;
@@ -113,20 +95,18 @@ public class EnigmaMachine
    
    private void Rotate()
    {
-      // Rotate the first wheel.
-      theFirstRotSlot.TurnRotor();
-      
-      // IF: The first rotor returns to the 0th position,turn the next rotor.
-      if ( theFirstRotSlot.GetPosition() == 0 )
+      // Turn rotors that can be triggered from the first rotor turning.
+      for( int i = 0; i < theTurningRotors.length; i++ ) 
       {
-         theSecondRotSlot.TurnRotor();
-
-         // IF: The first rotor returns to the 0th position,turn the next rotor.
-         if ( theSecondRotSlot.GetPosition() == 0 )
+         theTurningRotors[i].turnRotor();
+         
+         // If turning this rotor will not trigger the next one to turn, 
+         // then stop iterating. 
+         if( theTurningRotors[i].turnNext() == false )
          {
-            theThirdRotSlot.TurnRotor();
+            break;
          }
-       }
+      }
          return;
    }
    
@@ -140,35 +120,20 @@ public class EnigmaMachine
    PlugBoard thePlugBoard;
    
    /**
-    * The first non-stationary rotor to get initial input, and last to get reflected input.
-    */
-   Rotor theFirstRotSlot;
-   
-   /**
-    * The second non-stationary rotor to get initial input, and second to get reflected input.
-    */
-   Rotor theSecondRotSlot;
-   
-   /**
-    * The third non-stationay rotor to get initial input, and last to get reflected output.
-    */
-   Rotor theThirdRotSlot;
-   
-   /**
     * The stationary reflecting rotor.
     */
-   Rotor theReflectingRotor;
+   ReflectingRotor theReflectingRotor;
    
    /**
     * 
     */
-   Rotor[] theTurningRotors;
+   ClockRotor[] theTurningRotors;
    
    /**
     * The stationary input rotor. It's the first rotor to take input after the
     * plugboard.
     */
-   Rotor theStationaryRotor;
+   ClockRotor theStationaryRotor;
    
    /**
    * Value map of rotor one of the Swiss-K model of the enigma machine.
