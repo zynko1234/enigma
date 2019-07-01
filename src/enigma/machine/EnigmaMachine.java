@@ -1,4 +1,4 @@
-package enigma;
+package enigma.machine;
 
 import enigma.components.ClockRotor;
 import enigma.components.PlugBoard;

@@ -2,10 +2,10 @@ package application.test;
 
 import java.util.ArrayList;
 
-import enigma.EnigmaMachine;
 import enigma.components.ClockRotor;
 import enigma.components.PlugBoard;
 import enigma.components.Rotor;
+import enigma.machine.EnigmaMachine;
 import tools.RotorGenerator;
 
 public class EnigmaTester
