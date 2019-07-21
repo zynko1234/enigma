@@ -1,12 +1,50 @@
 package enigma.components;
 
 public interface Rotor
-{  
-   public int cipher( int inValue );
+{
+   /**
+    * Denotes what character set is being referenced in rotor generation.
+    */
+   public enum CharEncoding
+   {
+      ASCII, UNICODE, ALPHABET
+   }
+
+   /**
+    * Size of the English-Latin alphabet.
+    */
+   public static final int ALPHABET_SIZE = 26;
    
-   public int getAlphabetSize();
+   /**
+    * Size of the complete ASCII character set.
+    */
+   public static final int ASCII_SIZE = 256;
+
+   /**
+    * Size of the complete Unicode character set.
+    */
+   public static final int UNICODE_SIZE = 1112064;
    
-   public Object clone();
+   /**
+    * Converts the value based on the rotor architecture.
+    * 
+    * @param inValue The value to be converted.
+    * @return The converted value.
+    */
+   public abstract int cipher ( final int inValue );
    
-   public String toString();
+   /**
+    * 
+    * @param inValue
+    * @return
+    */
+   public abstract int mirrorCipher( final int inValue );
+
+   /**
+    * Returns the size of the rotor.
+    * 
+    * @return The size of the rotor.
+    */
+   public abstract int getSize ();
+
 }

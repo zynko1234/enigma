@@ -1,7 +1,6 @@
 package application;
 
 import enigma.components.Rotor;
-import tools.RotorGenerator;
 
 import java.io.IOException;
 import java.io.UTFDataFormatException;
@@ -12,7 +11,6 @@ import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.Arrays;
 
-import application.test.EnigmaTester;
 import enigma.components.ClockRotor;
 import enigma.components.ReflectingRotor;
 
@@ -21,15 +19,24 @@ public class Main
 
    public static void main ( String[] args )
    {
-      char[] x = RotorGenerator.generateUnicodeAlphabet( 1112064 );
+      char[] x = new char[ClockRotor.UNICODE_SIZE];
+      
+      for( int i = 0; i < x.length; i++ ) 
+      {
+         x[i] = (char)i;
+      }
+      
       String y = String.valueOf( x );
       StringBuilder z = new StringBuilder();
+      final String outputFmt = "\rPercent Complete: %.2f%%   ";
       
       for( int i = 0; i < y.length(); i++ )
       {
          z.append( i + ": " + y.charAt( i ) + "\n" ) ;
-         System.out.print( "\rPercent Complete: " + ( ( 100* ( i + 1 ) ) / y.length() )  + "%  ");
+         double percCalculation = ( ( 100* (double)( i + 1 ) ) / y.length() );
+         System.out.printf( outputFmt, percCalculation);
       }
+      System.out.println( );
       
       byte[] theBytes = z.toString().getBytes(StandardCharsets.UTF_8);
       
@@ -273,13 +280,6 @@ public class Main
             throw new IllegalArgumentException( "Vlaue not mapped in this alphabet" );
       }
       return outValue;
-   }
-
-   public static void runTests ()
-   {
-      EnigmaTester.TestPlugBoard();
-      EnigmaTester.TestRotors();
-      return;
    }
 
 }
