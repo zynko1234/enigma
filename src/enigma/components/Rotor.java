@@ -32,19 +32,18 @@ public interface Rotor
     * @return The converted value.
     */
    public abstract int cipher ( final int inValue );
-   
-   /**
-    * 
-    * @param inValue
-    * @return
-    */
-   public abstract int mirrorCipher( final int inValue );
 
    /**
     * Returns the size of the rotor.
     * 
     * @return The size of the rotor.
     */
-   public abstract int getSize ();
+   public int getSize ();
+
+   /**
+    * 
+    * @param inPos
+    */
+   public void setPosition ( final int inPos );
 
 }

@@ -1,97 +1,95 @@
 package enigma.components;
 
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Random;
+import java.util.function.IntUnaryOperator;
 
+import org.omg.CORBA.portable.IndirectionException;
+
+/**
+ * This class models the gears of an enigma machine. It can be configured to act
+ * as the turning rotors, a stationary rotor, or a stationary reflecting rotor.
+ * <p>
+ * Normal turning rotors can be generated with a call to
+ * {@link #generateRotor(int, long)} and passing true to
+ * {@link #setTurning(boolean)}.
+ * <p>
+ * Stationary rotors can be generated with a call to
+ * {@link #generateRotor(int, long)}, and passing false to
+ * {@link #setTurning(boolean)}.
+ * <p>
+ * Reflecting rotors can be generated with a call to
+ * {@link #generateReflRotor(int, long)} and passing false to
+ * {@link #setTurning(boolean)}.
+ */
 public class ClockRotor implements Rotor
-{   
-   ////////////////////////////////////////////////////////////////////////////
-   // Public Constants
-   ////////////////////////////////////////////////////////////////////////////
+{      
    
-   /**
-    * Value map of the reflecting rotor of the Swiss-K model of the enigma
-    * machine.
-    */
-    public static final int[] SWISS_K_REF = { 8, 12, 4, 19, 2, 6, 5, 17, 0, 24, 
-                                              18, 16, 1, 25, 23, 22, 11, 7, 10, 
-                                              3, 21, 20, 15, 14, 9, 13 };
-    
-   /**
-    * Value map of the stationary front rotor of the Swiss-K model of the enigma
-    * machine.
-    */
-   public static final int[] SWISS_K_STAT  = { 16, 22, 4, 17, 19, 25, 20, 8, 14,
-                                               0, 18, 3, 5, 6, 7, 9, 10, 15, 24, 
-                                               23, 2, 21, 1, 13, 12, 11 };
-   
-   /**
-   * Value map of rotor one of the Swiss-K model of the enigma machine.
-   */
-   public static final int[] SWISS_K_I = { 15, 4, 25, 20, 14, 7, 23, 18, 2, 21,
-                                           5, 12, 19, 1, 6, 11, 17, 8, 13, 16, 
-                                           9, 22, 0, 24, 3, 10 };
-   
-   /**
-   * Value map of rotor two of the Swiss-K model of the enigma machine.
-   */
-   public static final int[] SWISS_K_II = { 25, 14, 20, 4, 18, 24, 3, 10, 5, 22,
-                                            15, 2, 8, 16, 23, 7, 12, 21, 1, 11, 
-                                            6, 13, 9, 17, 0, 19 };  
-
-   /**
-   * Value map of rotor three of the Swiss-K model of the enigma machine.
-   */
-   public static final int[] SWISS_K_III = { 4, 7, 17, 21, 23, 6, 0, 14, 1, 16, 
-                                             20, 18, 8, 12, 25, 5, 11, 24, 13, 
-                                             22, 10, 19, 15, 3, 9, 2 }; 
-   
-   
-   
-   ////////////////////////////////////////////////////////////////////////////
+   //////////////////////////////////////////////////////////////////////////////
    // Exception Strings
-   ////////////////////////////////////////////////////////////////////////////
+   //////////////////////////////////////////////////////////////////////////////
    
    /**
-    * 
+    * Exception string used to denote an improperly generated map for a
+    * {@link ClockRotor} object.
     */
-   protected final String EXC_INVAL_MAP = "Invalid rotor map. Map cannot "
+   protected final String EXC_INVAL_MAP = "Invalid rotor map: Map cannot "
                                         + "contain duplicate or self connected "
-                                        + "values.";
+                                        + "values";
+   
+   protected final String EXC_INSERT_SIZE = "Invalid insertion: Cannot insert "
+                                          + "inner rotor of a different size.";
 
-   ////////////////////////////////////////////////////////////////////////////
+   //////////////////////////////////////////////////////////////////////////////
    // Protected Member Data
-   ////////////////////////////////////////////////////////////////////////////
+   //////////////////////////////////////////////////////////////////////////////
    
    /**
+    * The value map of the RotorNodes. The map is the size of the rotors alphabet,
+    * and each node contains a reference to the value it ciphers to, and the index
+    * of the nodes that ciphers to it.
     * 
+    * Where X ciphers to Y with a call to {@link ClockRotor#cipher(int)}, and Y
+    * mirror-ciphers to X with the call to {@link ClockRotor#mirrorCipher(int)}.
     */
    protected RotorNode[] theNodeMap;
    
    /**
-    * 
+    * How many times this rotor must turn before it turns the next inner rotor.
     */
-   private int theSize;
+   protected int theTurnRate;
    
    /**
-    * 
+    * The current position of the turned rotor.
     */
-   private int theTurnRate;
+   protected int theCurrPos;
    
    /**
-    * 
+    * Acts as the first position setting, and is what {@link ClockRotor#theCurrPos}
+    * will reset to if {@link ClockRotor#reset()} is called.
     */
-   private int theCurrPosition;
+   protected int theInitPos;
    
    /*
-    *  
+    *  Reference to the next rotor in the rotor chain.
     */
-   private ClockRotor theNextRotor;
+   protected ClockRotor theNextRotor;
    
-   ////////////////////////////////////////////////////////////////////////////
+   /**
+    * Denotes if this is a turning rotor or not.
+    */
+   protected boolean theTurnFlag;
+   
+   /////////////////////////////////////////////////////////////////////////////
    // Constructors
-   ////////////////////////////////////////////////////////////////////////////
+   /////////////////////////////////////////////////////////////////////////////
    
+   /**
+    * 
+    * @param inRotorMap
+    * @param inTurnRate
+    */
    public ClockRotor( final int[] inRotorMap, final int inTurnRate )
    {
       if(isValidRotor(inRotorMap)) 
@@ -129,24 +127,53 @@ public class ClockRotor implements Rotor
       return;
    }
    
-   ////////////////////////////////////////////////////////////////////////////
+   /////////////////////////////////////////////////////////////////////////////
    // Public Member Methods
-   ////////////////////////////////////////////////////////////////////////////
+   /////////////////////////////////////////////////////////////////////////////
    
+   /**
+    * 
+    * @param inRotor
+    */
    public void insert( final ClockRotor inRotor )
    {
-      // Set the next rotor in the chain if there isn't one, otherwise pass it
-      // down the chain until it hits the end.
-      if( theNextRotor == null )
+      // Only insert rotors of the same size.
+      if(inRotor.getSize() == this.getSize())
       {
-         theNextRotor = inRotor;
+         // Set the next rotor in the chain if there isn't one, otherwise pass it
+         // down the chain until it hits the end.
+         if( theNextRotor == null )
+         {
+            theNextRotor = inRotor;
+         }
+         else
+         {
+            theNextRotor.insert( inRotor );
+         }
       }
       else
       {
-         theNextRotor.insert( inRotor );
+         throw new IllegalArgumentException(EXC_INSERT_SIZE);
       }
-      
       return;
+   }
+   
+   /**
+    * 
+    * @param inTurnFlag
+    */
+   public void setTurning( final boolean inTurnFlag )
+   {
+      theTurnFlag = inTurnFlag;
+      return;
+   }
+   
+   /**
+    * Sets the position of the rotor back to it's initial position.
+    */
+   public void reset()
+   {
+      theCurrPos = theInitPos;
    }
    
    /** 
@@ -154,166 +181,255 @@ public class ClockRotor implements Rotor
     */
    public void turn()
    {
-      // Increment the position and rectify any overflow.
-      theCurrPosition++;
-      theCurrPosition = theCurrPosition % theNodeMap.length;
-      
-      // If there's a next rotor to turn and the new current position is
-      // divisible by the turn rate the turn the next rotor.
-      if( isDiv( theCurrPosition, theTurnRate ) && ( theNextRotor != null ) )
+      // Only turn this rotor if the turning has been enabled.
+      if(theTurnFlag)
       {
-         theNextRotor.turn();
+         // Increment the position and rectify any overflow.
+         theCurrPos++;
+         theCurrPos = theCurrPos % theNodeMap.length;
+         
+         // If there's a next rotor to turn and the new current position is
+         // divisible by the turn rate the turn the next rotor.
+         if( isDiv( theCurrPos, theTurnRate ) && ( theNextRotor != null ) )
+         {
+            theNextRotor.turn();
+         }
       }
       return;
    }
    
+   /**
+    * 
+    */
    public int getSize()
    {
       return theNodeMap.length;
    }
    
+   /**
+    * 
+    */
    public int cipher(final int inValue)
-   {  
-      int effOffset = (theCurrPosition + inValue) % theNodeMap.length;
+   {
+      // Calculate the effective offset of the value that's being ciphered to in
+      // this rotor, and get the value that's pointed to at that offset as the
+      // initial value of the cipher.
+      int effOffset = (theCurrPos + inValue) % theNodeMap.length;
       int outValue = theNodeMap[effOffset].getWiredTo();
-      
-      if(theNextRotor != null)
+
+      // If this is not the last rotor in the chain, pass it through the chain
+      // for continued ciphering.
+      if (theNextRotor != null)
       {
-         outValue = theNextRotor.cipher( outValue );
+         outValue = theNextRotor.cipher(outValue);
       }
-      
+
       return outValue;
    }
    
-   public int mirrorCipher( final int inValue )
+   /**
+    * 
+    * @param inValue
+    * @return
+    */
+   public int mirrorCipher(final int inValue)
    {
       int outValue = inValue;
-      int effOffset;
-      
-      if(theNextRotor != null)
+
+      if (theNextRotor != null)
       {
          outValue = theNextRotor.mirrorCipher(inValue);
       }
-      
+
       outValue = theNodeMap[outValue].getWiredFrom();
-      outValue = ((theNodeMap.length + outValue) - theCurrPosition ) % theNodeMap.length;
+      outValue = ((theNodeMap.length + outValue) - theCurrPos);
+      outValue = (outValue % theNodeMap.length);
       return outValue;
    }
    
-   public void setPosition(final int inPosition)
+   /**
+    * 
+    */
+   public void setPosition(final int inPos)
    {
-      theCurrPosition = inPosition;
+      theCurrPos = inPos;
       return;
    }
    
-   ////////////////////////////////////////////////////////////////////////////
-   // Protected Member Methods
-   ////////////////////////////////////////////////////////////////////////////
-   
-   /**
-    * Macro function for checking for divisibility.
-    * @param inNum The number that is being divided.
-    * @param inDiv
-    * @return
-    */
-   protected boolean isDiv(final int inNum, final int inDiv)
-   {
-      return ((inNum % inDiv) == 0);
-   }
-   
-   ////////////////////////////////////////////////////////////////////////////
+   /////////////////////////////////////////////////////////////////////////////
    // Public Static Methods
-   ////////////////////////////////////////////////////////////////////////////
+   /////////////////////////////////////////////////////////////////////////////
    
-   public static boolean isValidRotor ( final int[] inRotorMap )
+   public static boolean isValidRotor(final int[] inRotorMap)
    {
-      boolean validity = true;
+      boolean validity = false;
+      boolean[] valueCheckList = null;
 
-      // Used to map all possible values from 0 to N of the candidate rotor map.
-      boolean[] valueCheckList = new boolean[ inRotorMap.length ];
-      Arrays.fill( valueCheckList, Boolean.FALSE );
+      // First validity check is if
+      if (isDiv(inRotorMap.length, 2))
+      {
+         validity = true;
+         // Used to map all possible values from 0 to N of the candidate rotor
+         // map.
+         valueCheckList = new boolean[inRotorMap.length];
+         Arrays.fill(valueCheckList, Boolean.FALSE);
+      }
 
       // Check off every mapped value. Set the index equal rotor map value to
-      // true when found.
-      for ( int i = 0; i < inRotorMap.length; i++ )
+      // true when found. Check if any values are mapped to themselves.
+      for (int i = 0; i < inRotorMap.length && validity; i++)
       {
-         valueCheckList[ inRotorMap[ i ] ] = true;
-         
-         // Check that the current value does not map to itself.
-         validity = validity & ( inRotorMap[i] != i);
-         
-         // If a failure is found then break out of the loop.
-         if ( !validity )
-         {
-            break;
-         }
+         valueCheckList[inRotorMap[i]] = true;
+         validity = validity & (inRotorMap[i] != i);
       }
 
-      // If the previous test passed, run the next test for validity.
-      if ( validity )
+      // Bitwise AND against the checklist. If there are unmapped or
+      // duplicate values then validity will be set to false and the loop
+      // will break.
+      for (int i = 0; i < valueCheckList.length && validity; i++)
       {
-         // Bitwise AND against the checklist. If there are unmapped or
-         // duplicate values then validity will be set to false.
-         for ( int i = 0; i < valueCheckList.length; i++ )
-         {
-            // Check off every mapped value.
-            validity = validity & valueCheckList[ i ];
-            
-            // If failure is found then break out of the loop.
-            if ( !validity )
-            {
-               break;
-            }
-         }
+         // Check off every mapped value.
+         validity = validity & valueCheckList[i];
       }
-
       return validity;
    }
    
-   public static ClockRotor generateRotor(final int inAlphabetSize, final long inMapSeed)
-   {      
-      int[] outMap = new int[ inAlphabetSize ];
-      
+   /**
+    * 
+    * @param inAlphaSize
+    * @param inMapSeed
+    * @return
+    */
+   public static ClockRotor generateRotor(final int inAlphaSize,
+                                          final long inMapSeed)
+   {
+      int[] outMap = new int[inAlphaSize];
+
       // Flag denoting that the generated map has been fully tested for
       // validity.
       boolean validMap = false;
 
       // Seed a random number generator.
-      Random tempRand = new Random( inMapSeed );
-      
-      // Make sure the tick rate grater than 1, and less than the alphabet size inclusively.
-      int outTickRate = tempRand.nextInt(inAlphabetSize + 1);
-      
-      int[] swapMap = new int[ inAlphabetSize ];
+      Random tempRand = new Random(inMapSeed);
 
-      // Populate this map from 0 to N
-      for ( int i = 0; i < swapMap.length; i++ )
-      {
-         swapMap[ i ] = i;
-      }
+      // Make sure the tick rate grater than 1, and less than the alphabet size
+      // inclusively.
+      int outTickRate = tempRand.nextInt(inAlphaSize - 1) + 1;
+
+      int[] swapMap = generateOrderedArray(0, inAlphaSize);
 
       // Keep generating until a valid map is created.
-      while ( !validMap )
+      while (validMap == false)
       {
-         for ( int i = 0, swapIndex = 0, swapTail = 0; i < outMap.length; i++ )
+         for (int i = 0, swapIndex = 0, swapTail = 0; i < outMap.length; i++)
          {
             // Pick a random index of the remaining values.
-            swapIndex = tempRand.nextInt( swapMap.length - i );
+            swapIndex = tempRand.nextInt(swapMap.length - i);
 
             // Swap it with the last accessible element of the list.
-            swapTail = ( swapMap.length - 1 ) - i;
+            swapTail = (swapMap.length - 1) - i;
 
             // Copy the random value to be swapped to the output array.
-            outMap[ i ] = swapMap[ swapIndex ];
+            outMap[i] = swapMap[swapIndex];
 
             // Swap the copied value to the accessible end of the array.
-            swapMap[ swapIndex ] = swapMap[ swapTail ];
-            swapMap[ swapTail ] = outMap[ i ];
+            swapMap[swapIndex] = swapMap[swapTail];
+            swapMap[swapTail] = outMap[i];
 
          }
          // Check the final validity of the map.
-         validMap = ClockRotor.isValidRotor( outMap );
-      } 
-      return new ClockRotor( outMap, tempRand.nextInt( outTickRate ) );
+         validMap = ClockRotor.isValidRotor(outMap);
+      }
+      return new ClockRotor(outMap, tempRand.nextInt(generateTickBound(inAlphaSize)));
    }
+   
+   public static ClockRotor generateReflRotor(final int inAlphaSize,
+                                              final long inMapSeed)
+   {
+      // Map to be returned.
+      int[] outMap = new int[inAlphaSize];
+      
+      // Seed a random number generator for choosing indexes.
+      Random tempRand = new Random(inMapSeed);
+      
+      // Create an array list and initialize it with all the values of the list.
+      ArrayList<Integer> swapList = new ArrayList<Integer>(inAlphaSize);
+      for( int i = 0; i < swapList.size(); i++ ) { swapList.add(i); }
+      
+      // Flag denoting that the generated map has been fully tested for
+      // validity.
+      boolean validMap = false;
+      int swapIndexAlpha = 0;
+      int swapIndexBeta = 0;
+      
+      // Get the next two numbers to have mapped to each other in the rotor map.
+      // Remove that element after each assignment to avoid duplication.
+      while(swapList.size() > 0)
+      {
+         swapIndexAlpha = tempRand.nextInt(swapList.size());
+         swapList.remove(swapIndexAlpha);
+         swapIndexBeta = tempRand.nextInt(swapList.size());
+         swapList.remove(swapIndexBeta);
+         outMap[swapIndexAlpha] = swapIndexBeta;
+         outMap[swapIndexBeta] = swapIndexAlpha;
+      }
+      
+      return new ClockRotor(outMap, tempRand.nextInt(generateTickBound(inAlphaSize)));
+   }
+   
+   /////////////////////////////////////////////////////////////////////////////
+   // Protected Static Methods
+   /////////////////////////////////////////////////////////////////////////////
+   
+   /**
+    * Macro function for checking factorability.
+    * 
+    * @param inBase The number acting as the base for checking factorability.
+    * @param inFact The divisor that is being checked as a perfect factor.
+    * @return True if the base is factorable by the devisor, false otherwise.
+    */
+   protected static boolean isDiv(final int inBase, final int inFact)
+   {
+      return ((inBase % inFact) == 0);
+   }
+   
+   //+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+   // TODO: Add logic so that when start is less than end, the array is
+   // generated in descending order.
+   //+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+   
+   protected static int[] generateOrderedArray(final int start, final int end)
+   {
+      int length = (end - start) + 1;
+      
+      // Anything with size less than zero should be treated as zero.
+      if (length < 0) { length = 0; }
+            
+      int[] outArray = new int[length];
+      
+      for(int i = start; i < (start + outArray.length); i++)
+      {
+         outArray[i - start] = i;
+      }
+      return outArray;
+   }
+   
+   protected static int[] generateArray(final int inValue, final int inLength)
+   {
+      int[] outArray = new int[inLength];
+      
+      for(int i = 0; i < outArray.length; i++)
+      {
+         outArray[i] = inValue;
+      }
+      
+      return outArray;
+   }
+   
+   protected static int generateTickBound(final int inAlphaSize)
+   {
+      return (int)Math.sqrt((double)(inAlphaSize));
+   }
+   
 }
+
