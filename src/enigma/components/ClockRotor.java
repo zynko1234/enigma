@@ -90,7 +90,7 @@ public class ClockRotor implements Rotor
     * @param inRotorMap
     * @param inTurnRate
     */
-   public ClockRotor( final int[] inRotorMap, final int inTurnRate )
+   public ClockRotor( final int[] inRotorMap, final int inTurnRate, final int inInitPos )
    {
       if(isValidRotor(inRotorMap)) 
       {
@@ -174,6 +174,10 @@ public class ClockRotor implements Rotor
    public void reset()
    {
       theCurrPos = theInitPos;
+      if(theNextRotor != null)
+      {
+         theNextRotor.reset();
+      }
    }
    
    /** 
@@ -277,10 +281,10 @@ public class ClockRotor implements Rotor
 
       // Check off every mapped value. Set the index equal rotor map value to
       // true when found. Check if any values are mapped to themselves.
-      for (int i = 0; i < inRotorMap.length && validity; i++)
+      for (int i = 0; (i < inRotorMap.length) && validity; i++)
       {
          valueCheckList[inRotorMap[i]] = true;
-         validity = validity & (inRotorMap[i] != i);
+         validity &= (inRotorMap[i] != i);
       }
 
       // Bitwise AND against the checklist. If there are unmapped or
@@ -312,11 +316,11 @@ public class ClockRotor implements Rotor
       // Seed a random number generator.
       Random tempRand = new Random(inMapSeed);
 
-      // Make sure the tick rate grater than 1, and less than the alphabet size
+      // Make sure the tick rate is grater than 1, and less than the alphabet size
       // inclusively.
       int outTickRate = tempRand.nextInt(inAlphaSize - 1) + 1;
 
-      int[] swapMap = generateOrderedArray(0, inAlphaSize);
+      int[] swapMap = generateOrderedArray(0, (inAlphaSize - 1));
 
       // Keep generating until a valid map is created.
       while (validMap == false)
@@ -340,7 +344,9 @@ public class ClockRotor implements Rotor
          // Check the final validity of the map.
          validMap = ClockRotor.isValidRotor(outMap);
       }
-      return new ClockRotor(outMap, tempRand.nextInt(generateTickBound(inAlphaSize)));
+      ClockRotor outRotor = new ClockRotor(outMap, tempRand.nextInt(generateTickBound(inAlphaSize)), tempRand.nextInt(inAlphaSize));
+      outRotor.setTurning(true);
+      return outRotor;
    }
    
    public static ClockRotor generateReflRotor(final int inAlphaSize,
@@ -354,27 +360,37 @@ public class ClockRotor implements Rotor
       
       // Create an array list and initialize it with all the values of the list.
       ArrayList<Integer> swapList = new ArrayList<Integer>(inAlphaSize);
-      for( int i = 0; i < swapList.size(); i++ ) { swapList.add(i); }
+      for( int i = 0; i < inAlphaSize; i++ ) {swapList.add(i);}
       
       // Flag denoting that the generated map has been fully tested for
       // validity.
       boolean validMap = false;
-      int swapIndexAlpha = 0;
-      int swapIndexBeta = 0;
+      int swapIndex = 0;
+      int swapAlpha = 0;
+      int swapBeta;
       
       // Get the next two numbers to have mapped to each other in the rotor map.
       // Remove that element after each assignment to avoid duplication.
       while(swapList.size() > 0)
       {
-         swapIndexAlpha = tempRand.nextInt(swapList.size());
-         swapList.remove(swapIndexAlpha);
-         swapIndexBeta = tempRand.nextInt(swapList.size());
-         swapList.remove(swapIndexBeta);
-         outMap[swapIndexAlpha] = swapIndexBeta;
-         outMap[swapIndexBeta] = swapIndexAlpha;
+         // Pull value the first swap value, then delete it from the swap list.
+         swapIndex = tempRand.nextInt(swapList.size());
+         swapAlpha = swapList.get(swapIndex);
+         swapList.remove(swapIndex);
+         
+         // Pull the second swap value, then delete it from the swap list.
+         swapIndex = tempRand.nextInt(swapList.size());
+         swapBeta = swapList.get(swapIndex);
+         swapList.remove(swapIndex);
+         
+         // Perform the swap.
+         outMap[swapAlpha] = swapBeta;
+         outMap[swapBeta] = swapAlpha;
       }
       
-      return new ClockRotor(outMap, tempRand.nextInt(generateTickBound(inAlphaSize)));
+      ClockRotor outRotor = new ClockRotor(outMap, tempRand.nextInt(generateTickBound(inAlphaSize)), tempRand.nextInt(inAlphaSize));
+      outRotor.setTurning(false);
+      return outRotor;
    }
    
    /////////////////////////////////////////////////////////////////////////////

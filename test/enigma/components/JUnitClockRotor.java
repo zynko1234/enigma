@@ -8,6 +8,7 @@ import org.junit.Ignore;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.shadow.com.univocity.parsers.annotations.Validate;
 
 public class JUnitClockRotor
 {
@@ -22,7 +23,7 @@ public class JUnitClockRotor
    
    private static final int LARGE_MAP_SIZE = 100000;
    
-   private static final int LARGE_MAP_COUNT = 100;
+   private static final int LARGE_MAP_COUNT = 10;
    
    private static final int LARGE_INPUT_SIZE = 50000;
    
@@ -79,7 +80,7 @@ public class JUnitClockRotor
       System.out.println( Thread.currentThread().getStackTrace()[1].getMethodName() );
       
       int[] reflMap = {1, 0, 5, 4, 3, 2};
-      ClockRotor reflRotor = new ClockRotor(reflMap, 0);
+      ClockRotor reflRotor = new ClockRotor(reflMap, 0, 0);
       
       int[] testMapIn = {0, 1, 2, 3, 4, 5};
       int[] testMapOut = new int[testMapIn.length];
@@ -117,17 +118,19 @@ public class JUnitClockRotor
    @Test
    public void testLargeMap()
    {
-      final int alphabetSize = Rotor.UNICODE_SIZE;
+      final int alphaSize = Rotor.ASCII_SIZE;
       ClockRotor rootRotor = null;
+      ClockRotor reflRotor = null;
       Random randomzier = new Random(System.currentTimeMillis());
       
       int[] inputValues = new int[LARGE_INPUT_SIZE];
       int[] ciphValues = new int[LARGE_INPUT_SIZE];
+      int[] reCiphValues = new int[LARGE_INPUT_SIZE];
       
       // Generate input values
       for( int i = 0; i < inputValues.length; i++ )
       {
-         inputValues[i] = randomzier.nextInt( alphabetSize );
+         inputValues[i] = randomzier.nextInt( alphaSize );
       }
       
       // Generate the random large maps.
@@ -135,41 +138,80 @@ public class JUnitClockRotor
       {
          if( rootRotor != null )
          {
-            rootRotor.insert(ClockRotor.generateRotor(alphabetSize, System.currentTimeMillis()));
+            rootRotor.insert(ClockRotor.generateRotor(alphaSize, System.currentTimeMillis()));
          }
          else
          {
-            rootRotor = ClockRotor.generateRotor(alphabetSize, System.currentTimeMillis() );
+            rootRotor = ClockRotor.generateRotor(alphaSize, System.currentTimeMillis() );
          }
       }
+      
+      // Add the last reflecting rotor.
+      reflRotor = ClockRotor.generateReflRotor(alphaSize, System.currentTimeMillis());
       
       // Cipher the random input.
       for( int i = 0; i < ciphValues.length; i++ )
       {
-         
+         rootRotor.turn();
+         ciphValues[i] = rootRotor.cipher(inputValues[i]);
+         ciphValues[i] = reflRotor.cipher(ciphValues[i]);
+         ciphValues[i] = rootRotor.mirrorCipher(ciphValues[i]);
       }
+      
+      rootRotor.reset();
+      
+      // Cipher the random input.
+      for( int i = 0; i < ciphValues.length; i++ )
+      {
+         rootRotor.turn();
+         reCiphValues[i] = rootRotor.cipher(ciphValues[i]);
+         reCiphValues[i] = reflRotor.cipher(reCiphValues[i]);
+         reCiphValues[i] = rootRotor.mirrorCipher(reCiphValues[i]);
+      }
+      
+      boolean validReverseCipher = true;
       
       // Reverse the ciphering and check.
       for( int i = 0; i < ciphValues.length; i++ )
       {
-         
+         validReverseCipher &= (inputValues[i] == reCiphValues[i]); 
       }
+      
+      assertTrue(validReverseCipher);
    }
    
    @Test
-   public void testTurningCipher()
+   public void testReflectingRotor()
    {
-      System.out.println( Thread.currentThread().getStackTrace()[1].getMethodName() );
-      int[] testMapIn  = {0, 1, 2, 3, 4, 5};
-      int[] testMapOut = {4, 4, 0, 0, 3, 4};
+      final int rotorSize = ClockRotor.ALPHABET_SIZE;
+      final long genSeed = System.currentTimeMillis(); 
+      ClockRotor reflectingRotor;
+      reflectingRotor = ClockRotor.generateReflRotor(rotorSize, genSeed);
+      Random randomzier = new Random(System.currentTimeMillis());      
+      int[] inputValues = new int[rotorSize/2];
+      int[] outputValues = new int[rotorSize/2];
       
-      for( int i = 0, val; i < testMapIn.length; i++ )
+      // Generate input values.
+      for( int i = 0; i < inputValues.length; i++ )
       {
-         rotAlpha.turn();
-         val = rotAlpha.cipher( testMapIn[i] );
-         System.out.printf(VAL_CHECK_FMT, i, val, testMapOut[i]);
-         assertTrue( val == testMapOut[i] );
+         inputValues[i] = randomzier.nextInt(rotorSize);
       }
+      
+      // Cipher output values.
+      for( int i = 0; i < inputValues.length; i++ )
+      {
+         outputValues[i] = reflectingRotor.cipher(inputValues[i]);
+      }
+      
+      boolean valuesAreMirrored = true;
+      
+      // Check that the ouput values chiphered generate the input values again.
+      for( int i = 0; i < inputValues.length; i++ )
+      {
+         valuesAreMirrored &= (inputValues[i] == reflectingRotor.cipher(outputValues[i]));
+      }
+      
+      assertTrue(valuesAreMirrored);
       
       return;
    }
@@ -178,9 +220,9 @@ public class JUnitClockRotor
    public void manuallyResetRotors()
    {
       // Create rotors and chain them into their clock configuration.
-      rotAlpha = new ClockRotor(MAP_ALPHA, 2);
-      rotAlpha.insert( new ClockRotor(MAP_BETA, 3) );
-      rotAlpha.insert( new ClockRotor(MAP_GAMMA, 4) );  
+      rotAlpha = new ClockRotor(MAP_ALPHA, 2, 0);
+      rotAlpha.insert( new ClockRotor(MAP_BETA, 3, 0) );
+      rotAlpha.insert( new ClockRotor(MAP_GAMMA, 4, 0) );  
    }
    
 }

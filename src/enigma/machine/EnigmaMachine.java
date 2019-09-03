@@ -2,6 +2,7 @@ package enigma.machine;
 
 import java.nio.charset.Charset;
 import java.nio.charset.StandardCharsets;
+import java.security.SecureRandom;
 import java.util.Calendar;
 import java.util.Date;
 import java.util.Random;
@@ -59,9 +60,14 @@ public class EnigmaMachine
    ////////////////////////////////////////////////////////////////////////////
 
    /**
-    * Maximum number of clock rotors to chain in the head rotor.
+    * Maximum number of clock rotors to chain to the head rotor.
     */
-   protected int DEF_ROTOR_COUNT;
+   protected static int DEF_ROTOR_MAX = 128;
+   
+   /**
+    * Minimum number of clock rotors to chain to the head rotor. 
+    */
+   protected static int DEF_ROTOR_MIN = 4;
    
    /////////////////////////////////////////////////////////////////////////////
    // Protected Member Data
@@ -88,20 +94,23 @@ public class EnigmaMachine
    // parameter. Probably with a switch.                                                           
    //+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
    
-   public EnigmaMachine(final CharEncoding inEncoding,
-                        final int inRotorCount)
+   /**
+    * 
+    * @param inEncoding
+    * @param inSeed
+    */
+   public EnigmaMachine(final CharEncoding inEncoding, final long inSeed)
    {
-
-      
       theEncoding = inEncoding;
       theHeadRotor = null;
       theReflectingRotor = null;
-      theRotorCount = inRotorCount;
+      theRotorCount = 0;
       theInitializedFlag = false;
+      
       return;
    }
    
-   public void initialize(final long inSeed)
+   public void reInitialize(final long inSeed)
    {
       // Setup the machine with using the rotor generators, and flip the flag
       // denoting that the machine has been fully initialized.
@@ -111,16 +120,11 @@ public class EnigmaMachine
    
    public void initialize(final Calendar inDate)
    {
-      long seed = 0;
-      Charset charSet = StandardCharsets.UTF_8;
-      byte[] seedBytes = inDate.getTime().toString().getBytes(charSet);
-      
-      // Sum the bytes together.
-      for(byte currByte : seedBytes) { seed += currByte; }
+
       
       // Setup the machine with using the rotor generators, and flip the flag
       // denoting that the machine has been fully initialized.
-      initMachine(this, seed);
+      initMachine(this, genSeedFromDate(inDate));
       theInitializedFlag = true;
       return;
    }
@@ -149,25 +153,50 @@ public class EnigmaMachine
    // Protected Static Methods
    /////////////////////////////////////////////////////////////////////////////
    
-   //+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
-   // TODO: Carefully finish the enigma machine generation function. Pay close
-   // attention to the chaining of random number generation.                  
-   //+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+   
+   protected long genSeedFromDate( final Calendar inDate )
+   {
+      long seed = 0;
+      Charset charSet = StandardCharsets.UTF_8;
+      byte[] seedBytes = inDate.getTime().toString().getBytes(charSet);
+      
+      // Sum the bytes together.
+      for(byte currByte : seedBytes) { seed += currByte; }
+      
+      return seed;
+   }
    
    protected static void initMachine (final EnigmaMachine inMach, 
                                       final long inSeed)
    {
-      int tempRotorCount = inMach.getRotorCount();
+      if( inMach.theHeadRotor != null ) { inMach.theHeadRotor = null; }
       
+      Random randGen = new Random(inSeed);
+            
+      int tempRotorCount = randGen.nextInt(DEF_ROTOR_MAX - (DEF_ROTOR_MIN - 1));
+      tempRotorCount += DEF_ROTOR_MIN;
+      
+      // Build the chain of clock rotors.
       for(int i = 0; i < tempRotorCount; i++ )
       {
          if(inMach.theHeadRotor != null)
          {
-            inMach.theHeadRotor.insert(ClockRotor.generateRotor(inMach.getAlphabetSize(), inSeed));
+            inMach.theHeadRotor.insert(ClockRotor.generateRotor(inMach.theAlphSize, randGen.nextLong()));
          }
-         
+         else
+         {
+            inMach.theHeadRotor = ClockRotor.generateRotor(inMach.theAlphSize, randGen.nextLong());
+         }
       }
       
+      inMach.theReflectingRotor = ClockRotor.generateReflRotor(inMach.theAlphSize, randGen.nextLong());
+      
+      // Suggest the garbage collector do a cleanup at the end of this function
+      // due to potentially shaking entire rotor collections.
+      System.gc();
+      return;
    }
+   
+   
    
 }
