@@ -21,9 +21,7 @@ public class JUnitClockRotor
                                              + "[Cipher: %d]"
                                              + "[Expected Cipher: %d]\n";
    
-   private static final int LARGE_MAP_SIZE = 100000;
-   
-   private static final int LARGE_MAP_COUNT = 10;
+   private static final int LARGE_MAP_COUNT = 100;
    
    private static final int LARGE_INPUT_SIZE = 50000;
    
@@ -118,7 +116,7 @@ public class JUnitClockRotor
    @Test
    public void testLargeMap()
    {
-      final int alphaSize = Rotor.ASCII_SIZE;
+      final int alphaSize = Rotor.UNICODE_SIZE;
       ClockRotor rootRotor = null;
       ClockRotor reflRotor = null;
       Random randomzier = new Random(System.currentTimeMillis());

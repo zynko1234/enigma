@@ -325,20 +325,38 @@ public class ClockRotor implements Rotor
       // Keep generating until a valid map is created.
       while (validMap == false)
       {
-         for (int i = 0, swapIndex = 0, swapTail = 0; i < outMap.length; i++)
+         for (int i = 0, swapIndex = 0, currentTail = 0; i < outMap.length; i++)
          {
+            // Swap it with the last accessible element of the list.
+            currentTail = (swapMap.length - 1) - i;
+            
             // Pick a random index of the remaining values.
             swapIndex = tempRand.nextInt(swapMap.length - i);
 
-            // Swap it with the last accessible element of the list.
-            swapTail = (swapMap.length - 1) - i;
-
-            // Copy the random value to be swapped to the output array.
-            outMap[i] = swapMap[swapIndex];
+            // If the swap value is not equal to the current index, swap it in.
+            // (this is how to prevent values from mapping to themselves)
+            if(swapMap[swapIndex] != i)
+            {
+               outMap[i] = swapMap[swapIndex];   
+            }
+            // If the swap value is equal to i but is not the last index of the
+            // map then go back an iteration.
+            else if(i != (swapMap.length - 1))
+            {
+               i--;
+               continue;
+            }
+            // This is the last index and the index is equal to the swap value.
+            // Restart the iteration. (edge case)
+            else
+            {
+               i = -1;
+               continue;
+            }      
 
             // Swap the copied value to the accessible end of the array.
-            swapMap[swapIndex] = swapMap[swapTail];
-            swapMap[swapTail] = outMap[i];
+            swapMap[swapIndex] = swapMap[currentTail];
+            swapMap[currentTail] = outMap[i];
 
          }
          // Check the final validity of the map.
