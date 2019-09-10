@@ -89,11 +89,10 @@ public class EnigmaMachine
    // Constructors
    /////////////////////////////////////////////////////////////////////////////
    
-   //+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
-   // TODO: Set the size of the rotor explicitly, given the encoding        
-   // parameter. Probably with a switch.                                                           
-   //+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
    
+   //--------
+   // TODO: Add the switch to set the alphabet size by the type of encoding.
+   //--------
    /**
     * 
     * @param inEncoding
@@ -106,7 +105,7 @@ public class EnigmaMachine
       theReflectingRotor = null;
       theRotorCount = 0;
       theInitializedFlag = false;
-      
+      initMachine( inSeed);
       return;
    }
    
@@ -114,17 +113,15 @@ public class EnigmaMachine
    {
       // Setup the machine with using the rotor generators, and flip the flag
       // denoting that the machine has been fully initialized.
-      initMachine(this, inSeed);
+      initMachine(inSeed);
       theInitializedFlag = true;
    }
    
    public void initialize(final Calendar inDate)
    {
-
-      
       // Setup the machine with using the rotor generators, and flip the flag
       // denoting that the machine has been fully initialized.
-      initMachine(this, genSeedFromDate(inDate));
+      initMachine(genSeedFromDate(inDate));
       theInitializedFlag = true;
       return;
    }
@@ -166,10 +163,9 @@ public class EnigmaMachine
       return seed;
    }
    
-   protected static void initMachine (final EnigmaMachine inMach, 
-                                      final long inSeed)
+   protected void initMachine (final long inSeed)
    {
-      if( inMach.theHeadRotor != null ) { inMach.theHeadRotor = null; }
+      if( theHeadRotor != null ) { theHeadRotor = null; }
       
       Random randGen = new Random(inSeed);
             
@@ -179,21 +175,22 @@ public class EnigmaMachine
       // Build the chain of clock rotors.
       for(int i = 0; i < tempRotorCount; i++ )
       {
-         if(inMach.theHeadRotor != null)
+         if(theHeadRotor != null)
          {
-            inMach.theHeadRotor.insert(ClockRotor.generateRotor(inMach.theAlphSize, randGen.nextLong()));
+            theHeadRotor.insert(ClockRotor.generateRotor(theAlphSize, randGen.nextLong()));
          }
          else
          {
-            inMach.theHeadRotor = ClockRotor.generateRotor(inMach.theAlphSize, randGen.nextLong());
+            theHeadRotor = ClockRotor.generateRotor(theAlphSize, randGen.nextLong());
          }
       }
       
-      inMach.theReflectingRotor = ClockRotor.generateReflRotor(inMach.theAlphSize, randGen.nextLong());
+      theReflectingRotor = ClockRotor.generateReflRotor(theAlphSize, randGen.nextLong());
       
       // Suggest the garbage collector do a cleanup at the end of this function
       // due to potentially shaking entire rotor collections.
       System.gc();
+      theInitializedFlag = true;
       return;
    }
    

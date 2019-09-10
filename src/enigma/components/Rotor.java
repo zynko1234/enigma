@@ -18,7 +18,7 @@ public interface Rotor
    /**
     * Size of the complete ASCII character set.
     */
-   public static final int ASCII_SIZE = 256;
+   public static final int ASCII_BYTE = 256;
 
    /**
     * Size of the complete Unicode character set.
